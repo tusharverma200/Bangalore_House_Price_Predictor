@@ -13,18 +13,21 @@ def index():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    data = request.get_json()  # Get JSON from frontend
-    location = data.get("location")
-    bhk = data.get("bhk")
-    bath = data.get("bathrooms")
-    sqft = data.get("sqft")
+    try:
+        data = request.get_json() or request.form  # Handle both JSON and form data
+        location = data.get("location")
+        bhk = int(data.get("bhk"))
+        bath = int(data.get("bathrooms"))
+        sqft = float(data.get("sqft"))
 
-    print(f"Location: {location}, BHK: {bhk}, Bath: {bath}, SqFt: {sqft}")
+        input_df = pd.DataFrame([[location, sqft, bath, bhk]], columns=['location', 'total_sqft', 'bath', 'bhk'])
+        prediction = pipe.predict(input_df)[0] * 1e5
 
-    input_df = pd.DataFrame([[location, sqft, bath, bhk]], columns=['location', 'total_sqft', 'bath', 'bhk'])
-    prediction = pipe.predict(input_df)[0] * 1e5
-    
-    return jsonify({"price": round(prediction, 2)})  # Return JSON
+        return jsonify({"price": round(prediction, 2)})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 
